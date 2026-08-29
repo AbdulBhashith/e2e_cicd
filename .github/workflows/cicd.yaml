@@ -81,7 +81,7 @@ jobs:
       # TRIVY SECURITY SCAN
       # ----------------------------------------------------------
       - name: Run Trivy vulnerability scan
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@master
         with:
           image-ref: abdulbhashiths/ipl-voter:${{ github.sha }}
           format: table
