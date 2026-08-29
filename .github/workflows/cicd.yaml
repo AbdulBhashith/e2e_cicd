@@ -7,7 +7,6 @@ on:
 
 permissions:
   contents: write
-  actions: read
 
 jobs:
 
@@ -50,17 +49,22 @@ jobs:
 
 
   # ============================================================
-  # 2. BUILD DOCKER IMAGE
+  # 2. BUILD + TRIVY + MANUAL APPROVAL + PUSH
   # ============================================================
-  docker-build:
-    name: Build Docker Image
+  docker:
+    name: Build, Scan, Approve and Push
     runs-on: ubuntu-latest
     needs: test
 
     steps:
+
       - name: Checkout code
         uses: actions/checkout@v4
 
+
+      # ----------------------------------------------------------
+      # DOCKER BUILD
+      # ----------------------------------------------------------
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -72,45 +76,12 @@ jobs:
           tags: |
             abdulbhashiths/ipl-voter:${{ github.sha }}
 
-      - name: Save Docker image
-        run: |
-          docker save \
-            abdulbhashiths/ipl-voter:${{ github.sha }} \
-            -o ipl-voter-image.tar
 
-      - name: Upload Docker image artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ipl-voter-image-${{ github.sha }}
-          path: ipl-voter-image.tar
-          retention-days: 1
-
-
-  # ============================================================
-  # 3. TRIVY SECURITY SCAN
-  # ============================================================
-  security-scan:
-    name: Trivy Security Scan
-    runs-on: ubuntu-latest
-    needs: docker-build
-
-    steps:
-      - name: Download Docker image
-        uses: actions/download-artifact@v4
-        with:
-          name: ipl-voter-image-${{ github.sha }}
-
-      - name: Load Docker image
-        run: |
-          docker load \
-            -i ipl-voter-image.tar
-
-      - name: Verify Docker image
-        run: |
-          docker images
-
+      # ----------------------------------------------------------
+      # TRIVY SECURITY SCAN
+      # ----------------------------------------------------------
       - name: Run Trivy vulnerability scan
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.33.1
         with:
           image-ref: abdulbhashiths/ipl-voter:${{ github.sha }}
           format: table
@@ -118,56 +89,69 @@ jobs:
           exit-code: 0
 
 
-  # ============================================================
-  # 4. HUMAN APPROVAL + DOCKER HUB PUSH
-  # ============================================================
-  docker-push:
-    name: Human Approval and Docker Push
-    runs-on: ubuntu-latest
-    needs: security-scan
-
-    environment:
-      name: production
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download Docker image
-        uses: actions/download-artifact@v4
+      # ----------------------------------------------------------
+      # MANUAL APPROVAL
+      # ----------------------------------------------------------
+      - name: Manual approval
+        uses: trstringer/manual-approval@v1
         with:
-          name: ipl-voter-image-${{ github.sha }}
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: AbdulBhashith
+          minimum-approvals: 1
+          issue-title: "Docker Image Approval - IPL Voter"
+          issue-body: |
+            Docker image has been successfully built and scanned.
 
-      - name: Load Docker image
-        run: |
-          docker load \
-            -i ipl-voter-image.tar
+            Image:
+            abdulbhashiths/ipl-voter:${{ github.sha }}
 
+            Trivy scan completed.
+
+            Please review the workflow logs and approve this issue
+            if the image should be pushed to Docker Hub.
+
+          exclude-workflow-initiator-as-approver: false
+
+
+      # ----------------------------------------------------------
+      # DOCKER HUB LOGIN
+      # ----------------------------------------------------------
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+
+      # ----------------------------------------------------------
+      # TAG IMAGE
+      # ----------------------------------------------------------
       - name: Tag Docker image
         run: |
           docker tag \
             abdulbhashiths/ipl-voter:${{ github.sha }} \
             abdulbhashiths/ipl-voter:latest
 
+
+      # ----------------------------------------------------------
+      # PUSH IMAGE
+      # ----------------------------------------------------------
       - name: Push Docker image
         run: |
-          docker push abdulbhashiths/ipl-voter:${{ github.sha }}
-          docker push abdulbhashiths/ipl-voter:latest
+          docker push \
+            abdulbhashiths/ipl-voter:${{ github.sha }}
+
+          docker push \
+            abdulbhashiths/ipl-voter:latest
 
 
   # ============================================================
-  # 5. HELM VALIDATION
+  # 3. HELM VALIDATION
   # ============================================================
   helm-validate:
     name: Helm Validation
     runs-on: ubuntu-latest
-    needs: docker-push
+    needs: docker
 
     steps:
       - name: Checkout code
@@ -191,7 +175,7 @@ jobs:
 
 
   # ============================================================
-  # 6. UPDATE HELM IMAGE TAG
+  # 4. UPDATE HELM IMAGE TAG
   # ============================================================
   update-image-tag:
     name: Update Helm Image Tag
@@ -204,7 +188,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Update image tag in values.yaml
+      - name: Update image tag
         run: |
           sed -i \
             's/^  tag: .*/  tag: "${{ github.sha }}"/' \
@@ -219,7 +203,7 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Commit and push updated values.yaml
+      - name: Commit and push
         if: steps.changes.outputs.changed == 'true'
         run: |
           git config user.name "github-actions[bot]"
@@ -231,76 +215,3 @@ jobs:
             -m "chore(cd): update image tag to ${{ github.sha }}"
 
           git push origin HEAD:main
-
-
-  # ============================================================
-  # 7. EMAIL NOTIFICATION
-  # ============================================================
-  notify:
-    name: Pipeline Notification
-    runs-on: ubuntu-latest
-
-    needs:
-      - test
-      - docker-build
-      - security-scan
-      - docker-push
-      - helm-validate
-      - update-image-tag
-
-    if: always()
-
-    steps:
-      - name: Send email notification
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: smtp.gmail.com
-          server_port: 465
-          username: ${{ secrets.EMAIL_USERNAME }}
-          password: ${{ secrets.EMAIL_PASSWORD }}
-          to: ${{ secrets.EMAIL_USERNAME }}
-          from: GitHub Actions <${{ secrets.EMAIL_USERNAME }}>
-
-          subject: >-
-            ${{ contains(needs.*.result, 'failure')
-            && '❌ FAILED'
-            || '✅ SUCCESS' }}
-            - IPL Voter Pipeline #${{ github.run_number }}
-
-          body: |
-            IPL Voter CI/CD Pipeline
-
-            Pipeline Status:
-            ${{ contains(needs.*.result, 'failure') && 'FAILED ❌' || 'SUCCESS ✅' }}
-
-            Commit:
-            ${{ github.sha }}
-
-            Branch:
-            ${{ github.ref_name }}
-
-            Author:
-            ${{ github.actor }}
-
-            Job Results:
-
-            Test:
-            ${{ needs.test.result }}
-
-            Docker Build:
-            ${{ needs.docker-build.result }}
-
-            Trivy Security Scan:
-            ${{ needs.security-scan.result }}
-
-            Docker Push:
-            ${{ needs.docker-push.result }}
-
-            Helm Validation:
-            ${{ needs.helm-validate.result }}
-
-            Update Helm Image Tag:
-            ${{ needs.update-image-tag.result }}
-
-            View Run:
-            https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
