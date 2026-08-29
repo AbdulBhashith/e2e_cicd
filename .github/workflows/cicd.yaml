@@ -55,8 +55,8 @@ jobs:
           context: ./app
           push: true
           tags: |
-            omjaju18/ipl-voter:latest
-            omjaju18/ipl-voter:${{ github.sha }}
+            abdulbhashiths/ipl-voter:latest
+            abdulbhashiths/ipl-voter:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -68,7 +68,7 @@ jobs:
       - name: Run Trivy vulnerability scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: omjaju18/ipl-voter:${{ github.sha }}
+          image-ref: abdulbhashiths/ipl-voter:${{ github.sha }}
           format: table
           exit-code: 0
           severity: CRITICAL,HIGH
