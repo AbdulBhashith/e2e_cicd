@@ -1,6 +1,6 @@
 image:
   repository: abdulbhashiths/ipl-voter
-  tag: "81cd20768a7c41225b9dc818ead19c048862a024"
+  tag: "dda573ee2de9333fd0b122608957b118918b3fd1"
   pullPolicy: IfNotPresent
 
 replicaCount: 1
