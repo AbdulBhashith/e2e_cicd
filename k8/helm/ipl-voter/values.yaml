@@ -1,0 +1,24 @@
+image:
+  repository: omjaju18/ipl-voter
+  tag: "32a41f2bb06d13465ba501280436fc12b16e68b9"
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+service:
+  type: NodePort
+  port: 80
+  targetPort: 5000     
+  nodePort: 30007      
+
+resources:
+  limits:
+    cpu: "500m"
+    memory: "256Mi"
+  requests:
+    cpu: "250m"
+    memory: "128Mi"
+
+persistence:
+  enabled: true
+  size: 100Mi
