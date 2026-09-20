@@ -1,7 +1,7 @@
 # 🏏 Full Stack DevOps Project — IPL Team Voter
 
-![CICD Pipeline](https://github.com/omjaju18/Full_Stack_Devops_Project/actions/workflows/cicd.yaml/badge.svg)
-![Docker](https://img.shields.io/badge/Docker-omjaju18%2Fipl--voter-blue?logo=docker)
+![CICD Pipeline](https://github.com/AbdulBhashith/e2e_cicd/actions/workflows/cicd.yaml/badge.svg)
+![Docker](https://img.shields.io/badge/Docker-abdulbhashiths%2Fipl--voter-blue?logo=docker)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-Minikube-326CE5?logo=kubernetes)
 ![ArgoCD](https://img.shields.io/badge/GitOps-ArgoCD-orange?logo=argo)
 ![Prometheus](https://img.shields.io/badge/Monitoring-Prometheus-E6522C?logo=prometheus)
@@ -152,7 +152,7 @@ Full-Stack-Devops-Project/
 - Multi-stage Dockerfile
 - Non-root user for security
 - Gunicorn production server
-- Image: `omjaju18/ipl-voter:latest`
+- Image: `abdulbhashiths/ipl-voter`
 
 **Docker Hub — Image Tags**
 
@@ -276,8 +276,8 @@ Lint + Tests (flake8 + pytest)
 Trivy Security Scan
        ↓ fail = stop
 Docker Build + Push to Hub
-  omjaju18/ipl-voter:latest
-  omjaju18/ipl-voter:<sha>
+  abdulbhashiths/ipl-voter:latest
+  abdulbhashiths/ipl-voter:<sha>
        ↓
 Helm Lint + Helm Diff
        ↓ fail = stop
@@ -305,7 +305,7 @@ Prometheus (evaluates alert rules)
        ↓ threshold breached
 Alertmanager (routes to email)
        ↓
-Gmail alert → omjaju03@gmail.com 📧
+Gmail alert → <username>@gmail.com 📧
 ```
 
 ### Alert Rules
@@ -439,17 +439,7 @@ kubectl port-forward svc/argocd-server -n argocd 8081:443
 
 ## 🔗 Links
 
-- **GitHub Repo:** https://github.com/omjaju18/Full_Stack_Devops_Project
-- **Docker Hub:** https://hub.docker.com/repository/docker/omjaju18/ipl-voter/
+- **GitHub Repo:** https://github.com/AbdulBhashith/e2e_cicd
+- **Docker Hub:** https://hub.docker.com/repository/docker/abdulbhashiths/ipl-voter/
 
 ---
-
-## 👨‍💻 Author
-
-**Om Jaju** — Building in public, one DevOps tool at a time.
-
----
-
-## 📄 License
-
-MIT License — feel free to fork and build your own version!

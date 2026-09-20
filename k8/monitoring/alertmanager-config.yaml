@@ -14,10 +14,10 @@ spec:
   receivers:
     - name: 'email-alert'
       emailConfigs:
-        - to: 'omjaju03@gmail.com'        
-          from: 'omjaju03@gmail.com'      
+        - to: '<username>@gmail.com'        
+          from: '<username>@gmail.com'      
           smarthost: 'smtp.gmail.com:587'
-          authUsername: 'omjaju03@gmail.com'
+          authUsername: '<user-name>@gmail.com'
           authPassword:
             name: alertmanager-email-secret  
             key: password
