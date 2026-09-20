@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/omjaju18/Full_Stack_Devops_Project'
+    repoURL: 'https://github.com/AbdulBhashith/e2e_cicd'
     targetRevision: HEAD
     path: k8/helm/ipl-voter
     helm:
